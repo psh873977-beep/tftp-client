@@ -5,12 +5,12 @@ import sys
 import os
 from struct import pack
 
-# --- 상수 설정 ---
+
 DEFAULT_PORT = 69
 BLOCK_SIZE = 512
 DEFAULT_TRANSFER_MODE = 'octet'
-TIME_OUT = 5  # 타임아웃 5초 (교수님 요구사항: 응답 없을 시 처리)
-MAX_TRY = 3  # 최대 재시도 횟수
+TIME_OUT = 5  
+MAX_TRY = 3 
 
 OPCODE = {'RRQ': 1, 'WRQ': 2, 'DATA': 3, 'ACK': 4, 'ERROR': 5}
 ERROR_CODE = {
@@ -55,9 +55,9 @@ def send_data(sock, address, block_num, data):
     sock.sendto(data_message, address)
 
 
-# --- 메인 로직 ---
+
 if __name__ == '__main__':
-    # 1. 인자 파싱
+   
     parser = argparse.ArgumentParser(description='TFTP Client')
     parser.add_argument("host", help="Server IP or Domain name")
     parser.add_argument("operation", choices=['get', 'put'], help="Operation: get or put")
@@ -66,7 +66,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # 2. 도메인 네임 처리 (DNS Lookup)
+   
     try:
         server_ip = socket.gethostbyname(args.host)
         print(f"Connecting to {args.host} ({server_ip})...")
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     server_port = args.port
     server_address = (server_ip, server_port)
 
-    # 소켓 생성
+    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIME_OUT)
 
@@ -85,9 +85,7 @@ if __name__ == '__main__':
     operation = args.operation
     filename = args.filename
 
-    # ==========================================
-    # [GET] 파일 다운로드 로직
-    # ==========================================
+    
     if operation == 'get':
         if os.path.exists(filename):
             print(f"Error: '{filename}' already exists locally.")
@@ -99,13 +97,12 @@ if __name__ == '__main__':
             print(f"Error opening file: {e}")
             sys.exit(1)
 
-        # RRQ 전송 및 첫 패킷 대기 (재전송 로직)
         received_first_packet = False
         for try_count in range(MAX_TRY):
             send_rrq(sock, server_address, filename, mode)
             try:
                 data, new_address = sock.recvfrom(516)
-                server_address = new_address  # 서버의 새 포트로 주소 갱신
+                server_address = new_address  
                 received_first_packet = True
                 break
             except socket.timeout:
@@ -117,7 +114,7 @@ if __name__ == '__main__':
             os.remove(filename)
             sys.exit(1)
 
-        # 데이터 수신 루프
+       
         expected_block = 1
         while True:
             opcode = int.from_bytes(data[:2], 'big')
@@ -134,19 +131,16 @@ if __name__ == '__main__':
                         print(f"Download '{filename}' completed.")
                         break
                 else:
-                    # 블록 번호 안 맞으면 이전 ACK 재전송
                     send_ack(sock, server_address, block_number)
 
             elif opcode == OPCODE['ERROR']:
                 error_code = int.from_bytes(data[2:4], 'big')
-                # 에러 메시지 추출 (마지막 0 바이트 제거)
                 err_msg = data[4:-1].decode('utf-8', errors='ignore')
                 print(f"TFTP Error {error_code}: {ERROR_CODE.get(error_code, 'Unknown')} ({err_msg})")
                 file.close()
                 os.remove(filename)
                 sys.exit(1)
 
-            # 다음 패킷 수신
             try:
                 data, _ = sock.recvfrom(516)
             except socket.timeout:
@@ -155,9 +149,7 @@ if __name__ == '__main__':
 
         file.close()
 
-    # ==========================================
-    # [PUT] 파일 업로드 로직
-    # ==========================================
+   
     elif operation == 'put':
         if not os.path.exists(filename):
             print(f"Error: File '{filename}' not found.")
@@ -169,7 +161,6 @@ if __name__ == '__main__':
             print(f"Error opening file: {e}")
             sys.exit(1)
 
-        # WRQ 전송 및 ACK 0 대기 (재전송 로직)
         received_ack0 = False
         for try_count in range(MAX_TRY):
             send_wrq(sock, server_address, filename, mode)
@@ -192,7 +183,6 @@ if __name__ == '__main__':
             print("Error: Server not responding or Protocol Error.")
             sys.exit(1)
 
-        # 데이터 전송 루프
         block_number = 1
         while True:
             file_block = file.read(BLOCK_SIZE)
@@ -227,5 +217,6 @@ if __name__ == '__main__':
                 break
 
         file.close()
+
 
     sock.close()
