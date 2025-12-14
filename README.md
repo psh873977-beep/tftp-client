@@ -29,8 +29,8 @@
 *실행 명령어
 
 1. 203.250.133.88 서버에서 test.txt 파일 다운로드
-$ python3 mytftp.py 203.250.133.88 get test.txt
+  $ python3 mytftp.py 203.250.133.88 get test.txt
 2. 203.250.133.88서버에서 2389008.txt 파일 업로드
-$ python3 mytftp.py 203.250.133.88 put 2389008.txt
+  $ python3 mytftp.py 203.250.133.88 put 2389008.txt
 3. 내 컴퓨터에 있는 tftp.txt파일을 203.250.133.88서버로 업로드
-$ python3 mytftp.py 203.250.133.88 -p 69 put tftp.txt
+  $ python3 mytftp.py 203.250.133.88 -p 69 put tftp.txt
